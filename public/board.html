@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자유게시판 - IXIO</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* 게시판 전용 스타일 */
+        .board-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .post-form {
+            background: var(--gray-100);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .post-form input[type="text"],
+        .post-form textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--gray-400);
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            font-family: inherit;
+        }
+
+        .post-form textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .file-upload-area {
+            border: 2px dashed var(--gray-400);
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(26, 115, 232, 0.05);
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(26, 115, 232, 0.1);
+        }
+
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-item {
+            background: var(--gray-200);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .file-item .remove-file {
+            cursor: pointer;
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+
+        /* 게시글 목록 */
+        .post-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .post-card {
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: box-shadow 0.2s;
+        }
+
+        .post-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .post-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .post-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .post-content {
+            color: var(--text-primary);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            white-space: pre-wrap;
+        }
+
+        .post-attachments {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .attachment-link {
+            background: var(--gray-200);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--primary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .attachment-link:hover {
+            background: var(--gray-300);
+        }
+
+        /* 댓글 */
+        .comments-section {
+            border-top: 1px solid var(--gray-300);
+            padding-top: 1rem;
+            margin-top: 1rem;
+        }
+
+        .comments-toggle {
+            cursor: pointer;
+            color: var(--primary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .comment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .comment-item {
+            background: var(--gray-100);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+        }
+
+        .comment-meta {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .comment-content {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .comment-form input {
+            flex: 1;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gray-400);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .nickname-input {
+            max-width: 120px;
+        }
+
+        /* 페이지네이션 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pagination button {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gray-400);
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background: var(--gray-100);
+        }
+
+        .pagination button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* 로딩 */
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 헤더 -->
+    <header class="header">
+        <div class="container">
+            <div class="d-flex justify-between align-center">
+                <h1 class="header-title">📋 자유게시판</h1>
+                <nav class="nav">
+                    <a href="ixio.html" class="nav-link">IXIO 트렌드</a>
+                    <a href="board.html" class="nav-link active">게시판</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 -->
+    <main class="container py-lg board-container">
+
+        <!-- 글쓰기 폼 -->
+        <section class="card mb-lg">
+            <div class="card-header">
+                <h2 class="card-title">✏️ 새 글 작성</h2>
+            </div>
+            <div class="card-body">
+                <form id="post-form" class="post-form" style="background: transparent; padding: 0;">
+                    <input type="text" id="post-nickname" placeholder="닉네임 (선택)" maxlength="20">
+                    <input type="text" id="post-title" placeholder="제목을 입력하세요" maxlength="100" required>
+                    <textarea id="post-content" placeholder="내용을 입력하세요"></textarea>
+
+                    <div class="file-upload-area" id="file-drop-zone">
+                        📎 파일을 드래그하거나 클릭하여 업로드 (최대 10MB)
+                        <input type="file" id="file-input" multiple hidden>
+                    </div>
+
+                    <div class="file-list" id="file-list"></div>
+
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        📝 게시하기
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 게시글 목록 -->
+        <section class="card">
+            <div class="card-header d-flex justify-between align-center">
+                <h2 class="card-title">📋 게시글 목록</h2>
+                <button class="btn btn-outline btn-sm" onclick="loadPosts()">🔄 새로고침</button>
+            </div>
+            <div class="card-body">
+                <div id="post-list" class="post-list">
+                    <div class="loading-spinner">게시글 로딩 중...</div>
+                </div>
+
+                <div id="pagination" class="pagination"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 푸터 -->
+    <footer
+        style="background: var(--gray-100); padding: var(--spacing-lg); margin-top: var(--spacing-2xl); border-top: 1px solid var(--gray-400); text-align: center; color: var(--text-secondary); font-size: var(--font-size-sm);">
+        © 2025 <strong>fovea</strong>. All rights reserved.
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+    <!-- Config -->
+    <script src="js/firebase-config.js"></script>
+
+    <script>
+        // ==================== 전역 변수 ====================
+        let selectedFiles = [];
+        let currentPage = 1;
+        const postsPerPage = 10;
+
+        // ==================== 초기화 ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initFileUpload();
+            initPostForm();
+            loadPosts();
+        });
+
+        // ==================== 파일 업로드 ====================
+        function initFileUpload() {
+            const dropZone = document.getElementById('file-drop-zone');
+            const fileInput = document.getElementById('file-input');
+
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        function handleFiles(files) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+
+            Array.from(files).forEach(file => {
+                if (file.size > maxSize) {
+                    alert(`${file.name}은(는) 10MB를 초과합니다.`);
+                    return;
+                }
+                if (selectedFiles.length >= 5) {
+                    alert('최대 5개 파일까지 업로드 가능합니다.');
+                    return;
+                }
+                selectedFiles.push(file);
+            });
+
+            renderFileList();
+        }
+
+        function renderFileList() {
+            const listEl = document.getElementById('file-list');
+            listEl.innerHTML = selectedFiles.map((file, idx) => `
+                <div class="file-item">
+                    📄 ${file.name}
+                    <span class="remove-file" onclick="removeFile(${idx})">✕</span>
+                </div>
+            `).join('');
+        }
+
+        function removeFile(idx) {
+            selectedFiles.splice(idx, 1);
+            renderFileList();
+        }
+
+        // ==================== 게시글 작성 ====================
+        function initPostForm() {
+            const form = document.getElementById('post-form');
+            form.addEventListener('submit', handlePostSubmit);
+        }
+
+        async function handlePostSubmit(e) {
+            e.preventDefault();
+
+            const nickname = document.getElementById('post-nickname').value.trim() || '익명';
+            const title = document.getElementById('post-title').value.trim();
+            const content = document.getElementById('post-content').value.trim();
+
+            if (!title) {
+                alert('제목을 입력하세요.');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '⏳ 업로드 중...';
+
+            try {
+                // 파일 업로드
+                const attachments = [];
+                for (const file of selectedFiles) {
+                    const fileRef = storage.ref().child(`board/${Date.now()}_${file.name}`);
+                    await fileRef.put(file);
+                    const url = await fileRef.getDownloadURL();
+                    attachments.push({
+                        name: file.name,
+                        url: url,
+                        size: file.size
+                    });
+                }
+
+                // 게시글 저장
+                await db.collection('board').add({
+                    nickname: nickname,
+                    title: title,
+                    content: content,
+                    attachments: attachments,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    commentCount: 0
+                });
+
+                // 폼 초기화
+                document.getElementById('post-form').reset();
+                selectedFiles = [];
+                renderFileList();
+
+                alert('게시글이 작성되었습니다!');
+                loadPosts();
+
+            } catch (error) {
+                console.error('게시글 작성 오류:', error);
+                alert('게시글 작성 중 오류가 발생했습니다: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '📝 게시하기';
+            }
+        }
+
+        // ==================== 게시글 목록 ====================
+        async function loadPosts() {
+            const listEl = document.getElementById('post-list');
+            listEl.innerHTML = '<div class="loading-spinner">게시글 로딩 중...</div>';
+
+            try {
+                const snapshot = await db.collection('board')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+
+                const posts = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                if (posts.length === 0) {
+                    listEl.innerHTML = '<div class="text-center text-muted" style="padding: 2rem;">아직 게시글이 없습니다.</div>';
+                    return;
+                }
+
+                // 페이지네이션
+                const start = (currentPage - 1) * postsPerPage;
+                const end = start + postsPerPage;
+                const pagePosts = posts.slice(start, end);
+
+                listEl.innerHTML = pagePosts.map(post => renderPostCard(post)).join('');
+                renderPagination(posts.length);
+
+            } catch (error) {
+                console.error('게시글 로딩 오류:', error);
+                listEl.innerHTML = '<div class="text-center text-muted" style="padding: 2rem;">게시글을 불러올 수 없습니다.</div>';
+            }
+        }
+
+        function renderPostCard(post) {
+            const createdAt = post.createdAt ? post.createdAt.toDate().toLocaleString('ko-KR') : '방금 전';
+
+            const attachmentsHTML = (post.attachments || []).map(att => `
+                <a href="${att.url}" target="_blank" class="attachment-link">
+                    📎 ${att.name}
+                </a>
+            `).join('');
+
+            return `
+                <div class="post-card" id="post-${post.id}">
+                    <div class="post-header">
+                        <h3 class="post-title">${escapeHtml(post.title)}</h3>
+                        <div class="post-meta">${escapeHtml(post.nickname)} · ${createdAt}</div>
+                    </div>
+                    <div class="post-content">${escapeHtml(post.content)}</div>
+                    ${attachmentsHTML ? `<div class="post-attachments">${attachmentsHTML}</div>` : ''}
+                    <div class="comments-section">
+                        <div class="comments-toggle" onclick="toggleComments('${post.id}')">
+                            💬 댓글 (${post.commentCount || 0})
+                        </div>
+                        <div id="comments-${post.id}" style="display: none;">
+                            <div class="comment-list" id="comment-list-${post.id}"></div>
+                            <div class="comment-form">
+                                <input type="text" class="nickname-input" id="comment-nickname-${post.id}" placeholder="닉네임">
+                                <input type="text" id="comment-input-${post.id}" placeholder="댓글을 입력하세요">
+                                <button class="btn btn-primary btn-sm" onclick="addComment('${post.id}')">등록</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPagination(totalPosts) {
+            const totalPages = Math.ceil(totalPosts / postsPerPage);
+            const paginationEl = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                paginationEl.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            paginationEl.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadPosts();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==================== 댓글 ====================
+        async function toggleComments(postId) {
+            const commentsEl = document.getElementById(`comments-${postId}`);
+            const isHidden = commentsEl.style.display === 'none';
+
+            commentsEl.style.display = isHidden ? 'block' : 'none';
+
+            if (isHidden) {
+                await loadComments(postId);
+            }
+        }
+
+        async function loadComments(postId) {
+            const listEl = document.getElementById(`comment-list-${postId}`);
+            listEl.innerHTML = '<div class="text-muted" style="font-size: 0.875rem;">댓글 로딩 중...</div>';
+
+            try {
+                const snapshot = await db.collection('board').doc(postId)
+                    .collection('comments')
+                    .orderBy('createdAt', 'asc')
+                    .get();
+
+                const comments = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
+                if (comments.length === 0) {
+                    listEl.innerHTML = '<div class="text-muted" style="font-size: 0.875rem;">아직 댓글이 없습니다.</div>';
+                    return;
+                }
+
+                listEl.innerHTML = comments.map(comment => {
+                    const createdAt = comment.createdAt ? comment.createdAt.toDate().toLocaleString('ko-KR') : '방금 전';
+                    return `
+                        <div class="comment-item">
+                            <div class="comment-meta">${escapeHtml(comment.nickname)} · ${createdAt}</div>
+                            <div class="comment-content">${escapeHtml(comment.content)}</div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('댓글 로딩 오류:', error);
+                listEl.innerHTML = '<div class="text-muted" style="font-size: 0.875rem;">댓글을 불러올 수 없습니다.</div>';
+            }
+        }
+
+        async function addComment(postId) {
+            const nicknameInput = document.getElementById(`comment-nickname-${postId}`);
+            const contentInput = document.getElementById(`comment-input-${postId}`);
+
+            const nickname = nicknameInput.value.trim() || '익명';
+            const content = contentInput.value.trim();
+
+            if (!content) {
+                alert('댓글 내용을 입력하세요.');
+                return;
+            }
+
+            try {
+                // 댓글 추가
+                await db.collection('board').doc(postId)
+                    .collection('comments')
+                    .add({
+                        nickname: nickname,
+                        content: content,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                // 댓글 수 증가
+                await db.collection('board').doc(postId).update({
+                    commentCount: firebase.firestore.FieldValue.increment(1)
+                });
+
+                // 입력창 초기화
+                contentInput.value = '';
+
+                // 댓글 목록 새로고침
+                await loadComments(postId);
+
+                // 게시글 목록의 댓글 수 업데이트
+                loadPosts();
+
+            } catch (error) {
+                console.error('댓글 작성 오류:', error);
+                alert('댓글 작성 중 오류가 발생했습니다.');
+            }
+        }
+
+        // ==================== 유틸리티 ====================
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+
+</html>

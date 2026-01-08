@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로그인 | 키워드 트렌드 모니터링</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 50px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .login-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 40px;
+        }
+
+        .google-signin-btn {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .google-signin-btn:hover {
+            background: #f8f9fa;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .google-signin-btn:active {
+            transform: translateY(0);
+        }
+
+        .google-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .divider {
+            margin: 30px 0;
+            position: relative;
+            text-align: center;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #e0e0e0;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .info-box h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+            color: #7f8c8d;
+        }
+
+        .info-box li {
+            margin: 5px 0;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: none;
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-logo">📊</div>
+        <h1 class="login-title">키워드 트렌드 모니터링</h1>
+        <p class="login-subtitle">뉴스 트렌드를 한눈에 파악하세요</p>
+
+        <button id="googleSignInBtn" class="google-signin-btn">
+            <svg class="google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            Google 계정으로 로그인
+        </button>
+
+        <div class="divider">
+            <span>또는</span>
+        </div>
+
+        <button id="guestBtn" class="google-signin-btn" style="background: #f8f9fa; border-color: #ddd;">
+            <span>게스트로 둘러보기</span>
+        </button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="info-box">
+            <h3>💡 로그인 시 이용 가능한 기능</h3>
+            <ul>
+                <li>키워드 즐겨찾기 저장</li>
+                <li>맞춤형 트렌드 알림</li>
+                <li>상세 분석 리포트</li>
+                <li>관리자 페이지 (권한 필요)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyBQnDMvtDnQDd9p4clijvVZsZcspRtiFIk",
+            authDomain: "keyword-trend-monitor.firebaseapp.com",
+            projectId: "keyword-trend-monitor",
+            storageBucket: "keyword-trend-monitor.firebasestorage.app",
+            messagingSenderId: "476155824835",
+            appId: "1:476155824835:web:ff9e01a10ca6eb1119d02a"
+        };
+
+        // Firebase 초기화
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // 요소 가져오기
+        const googleSignInBtn = document.getElementById('googleSignInBtn');
+        const guestBtn = document.getElementById('guestBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // 리다이렉트 결과 확인 (페이지 로드 시)
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result) {
+                    // 로그인 성공
+                    const user = result.user;
+                    console.log('로그인 성공:', user.email);
+                    window.location.href = '/';
+                }
+            })
+            .catch((error) => {
+                console.error('로그인 오류:', error);
+                loading.classList.remove('active');
+
+                let errorMsg = '로그인에 실패했습니다. 다시 시도해주세요.';
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMsg = '로그인 창이 닫혔습니다.';
+                } else if (error.code === 'auth/cancelled-popup-request') {
+                    errorMsg = '로그인이 취소되었습니다.';
+                }
+
+                errorMessage.textContent = errorMsg;
+                errorMessage.classList.add('active');
+            });
+
+        // 이미 로그인된 사용자 체크
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // 로그인 되어 있으면 대시보드로 이동
+                window.location.href = '/';
+            }
+        });
+
+        // Google 로그인 (리다이렉트 방식)
+        googleSignInBtn.addEventListener('click', async () => {
+            try {
+                loading.classList.add('active');
+                errorMessage.classList.remove('active');
+                googleSignInBtn.disabled = true;
+
+                // 리다이렉트 방식으로 로그인 (팝업 차단 우회)
+                await signInWithRedirect(auth, provider);
+
+                // 리다이렉트 후 돌아오면 getRedirectResult에서 처리됨
+
+            } catch (error) {
+                console.error('로그인 오류:', error);
+                loading.classList.remove('active');
+                googleSignInBtn.disabled = false;
+
+                let errorMsg = '로그인에 실패했습니다. 다시 시도해주세요.';
+                if (error.code === 'auth/unauthorized-domain') {
+                    errorMsg = 'localhost가 승인된 도메인이 아닙니다. Firebase Console에서 승인해주세요.';
+                }
+
+                errorMessage.textContent = errorMsg;
+                errorMessage.classList.add('active');
+            }
+        });
+
+        // 게스트 모드
+        guestBtn.addEventListener('click', () => {
+            // 게스트로 대시보드 접속 (읽기 전용)
+            window.location.href = '/';
+        });
+    </script>
+</body>
+
+</html>

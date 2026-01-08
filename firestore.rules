@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 키워드 컬렉션 - 누구나 읽기/쓰기 가능 (개발/테스트용)
+    match /keywords/{keywordId} {
+      allow read, write: if true;
+    }
+    
+    // 매체 컬렉션 - 누구나 읽기/쓰기 가능
+    match /sources/{sourceId} {
+      allow read, write: if true;
+    }
+    
+    // 데이터 컬렉션 - 누구나 읽기 가능, Functions만 쓰기
+    match /data/{dataId} {
+      allow read: if true;
+      allow write: if false; // Functions에서만 쓰기 가능
+    }
+    
+    // 알림 설정 - 누구나 읽기/쓰기 가능
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+    
+    // 알림(alerts) 컬렉션 - 누구나 읽기 가능, Functions만 쓰기
+    match /alerts/{alertId} {
+      allow read: if true;
+      allow write: if false; // Functions에서만 쓰기 가능
+    }
+    
+    // 계정 정보 - 누구나 읽기/쓰기 가능
+    match /accounts/{accountId} {
+      allow read, write: if true;
+    }
+    
+    // 이메일 수신자 - 누구나 읽기/쓰기 가능
+    match /emailRecipients/{recipientId} {
+      allow read, write: if true;
+    }
+    
+    
+    // Webhook 수신자 - 누구나 읽기/쓰기 가능
+    match /webhookRecipients/{webhookId} {
+      allow read, write: if true;
+    }
+    
+    // IXIO 데이터 - 누구나 읽기/쓰기 가능 (개발/테스트용)
+    match /ixioData/{dataId} {
+      allow read, write: if true; // 개발/테스트용
+    }
+    
+    // 게시판 - 누구나 읽기/쓰기 가능
+    match /board/{postId} {
+      allow read, write: if true;
+      
+      // 댓글 서브컬렉션
+      match /comments/{commentId} {
+        allow read, write: if true;
+      }
+    }
+    
+    // 글로벌 뉴스 Task - 누구나 읽기/쓰기 가능
+    match /globalTasks/{taskId} {
+      allow read, write: if true;
+    }
+    
+    // 글로벌 뉴스 데이터 - 누구나 읽기 가능
+    match /globalNewsData/{dataId} {
+      allow read: if true;
+      allow write: if true; // 개발용, 나중에 Functions만 쓰기로 변경
+    }
+  }
+}

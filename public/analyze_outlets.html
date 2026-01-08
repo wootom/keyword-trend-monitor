@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IXIO 언론사 분석</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+    <h1>IXIO 데이터 언론사 분석</h1>
+    <div id="result" style="white-space: pre-wrap; font-family: monospace;"></div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHXj3UNBJlWO1yGIVx2CQYrmglFfGN9qs",
+            authDomain: "keyword-trend-monitor.firebaseapp.com",
+            projectId: "keyword-trend-monitor",
+            storageBucket: "keyword-trend-monitor.firebasestorage.app",
+            messagingSenderId: "908689153541",
+            appId: "1:908689153541:web:43eed16f2c8a43d06ffd52"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const MAJOR_OUTLETS = [
+            '조선일보', '중앙일보', '동아일보', '한겨레', '경향신문',
+            '한국일보', '서울신문', '세계일보', '국민일보', '문화일보',
+            '매일경제', '한국경제', '서울경제', '파이낸셜뉴스', '머니투데이',
+            '이데일리', '아시아경제', '헤럴드경제', '뉴스1', '뉴시스',
+            'KBS', 'MBC', 'SBS', 'JTBC', 'MBN', 'YTN', '연합뉴스TV', 'TV조선',
+            '채널A', 'CBS', '연합뉴스',
+            '전자신문', '디지털타임스', '디지털데일리', '지디넷코리아', '블로터',
+            '아이뉴스24', 'IT동아', '테크월드', '바이라인네트워크', 'AI타임스',
+            '오마이뉴스', '프레시안', '미디어오늘', '더팩트', '스포츠조선',
+            '스포츠동아', '일간스포츠', '데일리안', 'SBS Biz', '비즈워치',
+            '이투데이', '조선비즈', '한경비즈니스', '뉴스웨이', '노컷뉴스'
+        ];
+
+        function isMajorOutlet(source) {
+            if (!source) return false;
+            const sourceLower = source.toLowerCase();
+            return MAJOR_OUTLETS.some(outlet =>
+                sourceLower.includes(outlet.toLowerCase()) ||
+                outlet.toLowerCase().includes(sourceLower)
+            );
+        }
+
+        async function analyze() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '분석 중...';
+
+            const snapshot = await db.collection('ixioData').get();
+
+            let totalArticles = 0;
+            let majorOutletCount = 0;
+            let nonMajorOutletCount = 0;
+            const nonMajorOutlets = {};
+            const nonMajorArticles = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const articles = data.articles || [];
+
+                articles.forEach(article => {
+                    totalArticles++;
+                    const outlet = article.outlet || '';
+
+                    if (isMajorOutlet(outlet)) {
+                        majorOutletCount++;
+                    } else {
+                        nonMajorOutletCount++;
+                        nonMajorOutlets[outlet] = (nonMajorOutlets[outlet] || 0) + 1;
+                        nonMajorArticles.push({
+                            date: data.dateKey,
+                            outlet: outlet,
+                            title: (article.title || '').substring(0, 50) + '...'
+                        });
+                    }
+                });
+            });
+
+            let output = `
+====================================
+IXIO 데이터 언론사 분석 결과
+====================================
+
+총 기사 수: ${totalArticles}건
+주요 언론사 기사: ${majorOutletCount}건
+비주요 언론사 기사: ${nonMajorOutletCount}건
+
+--- 비주요 언론사 목록 ---
+`;
+            Object.entries(nonMajorOutlets)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([outlet, count]) => {
+                    output += `  ${outlet}: ${count}건\n`;
+                });
+
+            output += '\n--- 비주요 언론사 기사 상세 ---\n';
+            nonMajorArticles.forEach((art, idx) => {
+                output += `${idx + 1}. [${art.date}] ${art.outlet}: ${art.title}\n`;
+            });
+
+            resultDiv.textContent = output;
+        }
+
+        analyze();
+    </script>
+</body>
+
+</html>

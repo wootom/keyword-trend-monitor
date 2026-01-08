@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글로벌 뉴스 모니터링 - 키워드 트렌드</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <!-- 비밀번호 입력 화면 -->
+    <div id="auth-screen"
+        style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: var(--gray-100);">
+        <div class="card" style="max-width: 400px; width: 100%; margin: 1rem;">
+            <div class="card-header">
+                <h2 class="card-title">접근 보호</h2>
+            </div>
+            <div class="card-body">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">글로벌 뉴스 모니터링 시스템에 접근하려면 비밀번호를 입력하세요.</p>
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label for="password">비밀번호</label>
+                        <input type="password" id="password" class="form-control" placeholder="비밀번호 입력" required>
+                    </div>
+                    <div id="auth-error" class="alert alert-error" style="display: none; margin-top: 1rem;">
+                        비밀번호가 올바르지 않습니다.
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        접속
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠 (인증 후 표시) -->
+    <div id="main-content" style="display: none;">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="container">
+                <div class="d-flex justify-between align-center">
+                    <h1 class="header-title">글로벌 뉴스 모니터링</h1>
+                    <nav class="nav">
+                        <a href="ixio.html" class="nav-link">IXIO</a>
+                        <a href="global-news.html" class="nav-link active">글로벌</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="container py-lg">
+
+            <!-- Task 생성 버튼 -->
+            <section class="mb-lg">
+                <div class="d-flex justify-between align-center">
+                    <h2>Task 목록</h2>
+                    <button class="btn btn-primary" onclick="showCreateModal()">
+                        + 새 Task 생성
+                    </button>
+                </div>
+            </section>
+
+            <!-- Task 카드 목록 -->
+            <section id="task-list" class="mb-lg">
+                <div class="card">
+                    <div class="card-body text-center text-muted">
+                        데이터 로딩 중...
+                    </div>
+                </div>
+            </section>
+
+            <!-- 안내 -->
+            <section class="card">
+                <div class="card-header">
+                    <h2 class="card-title">사용 안내</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>글로벌 뉴스 모니터링 시스템</strong><br><br>
+                        • <strong>Task 생성</strong>: 모니터링할 키워드와 언어를 설정합니다.<br>
+                        • <strong>지원 언어</strong>: 영어, 말레이시아어, 인도네시아어, 브라질어, 일본어, 아랍어<br>
+                        • <strong>자동 수집</strong>: 2시간마다 Google News에서 새 기사를 수집합니다.<br>
+                        • <strong>필터링</strong>: spam, scam, prepaid 등 지정된 키워드를 제외합니다.<br>
+                        • <strong>시간 표시</strong>: 한국시간 기준 (현지시간 병기)
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 푸터 -->
+        <footer
+            style="background: var(--gray-100); padding: var(--spacing-lg); margin-top: var(--spacing-2xl); border-top: 1px solid var(--gray-400); text-align: center; color: var(--text-secondary); font-size: var(--font-size-sm);">
+            © 2025 <strong>fovea</strong>. All rights reserved.
+        </footer>
+    </div>
+
+    <!-- Task 생성 모달 -->
+    <div id="create-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="card" style="max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; margin: 1rem;">
+            <div class="card-header d-flex justify-between align-center">
+                <h2 class="card-title" id="modal-title">새 Task 생성</h2>
+                <button class="btn btn-outline btn-sm" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="card-body">
+                <form id="task-form">
+                    <input type="hidden" id="task-id">
+
+                    <div class="form-group">
+                        <label for="task-name">Task 이름 *</label>
+                        <input type="text" id="task-name" class="form-control" placeholder="예: AI Assistant Monitoring"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="task-keywords">키워드 (쉼표로 구분) *</label>
+                        <textarea id="task-keywords" class="form-control" rows="3"
+                            placeholder="예: chatgpt, bard, claude, gemini" required></textarea>
+                        <small class="text-muted">여러 키워드를 쉼표로 구분해서 입력하세요.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>언어 선택 (복수 가능) *</label>
+                        <div id="language-checkboxes"
+                            style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin-top: 0.5rem;">
+                            <label class="d-flex align-center gap-sm">
+                                <input type="checkbox" name="task-language" value="en" checked>
+                                <span>English</span>
+                            </label>
+                            <label class="d-flex align-center gap-sm">
+                                <input type="checkbox" name="task-language" value="ms">
+                                <span>Malay (Malaysia)</span>
+                            </label>
+                            <label class="d-flex align-center gap-sm">
+                                <input type="checkbox" name="task-language" value="id">
+                                <span>Indonesian</span>
+                            </label>
+                            <label class="d-flex align-center gap-sm">
+                                <input type="checkbox" name="task-language" value="pt-BR">
+                                <span>Portuguese (Brazil)</span>
+                            </label>
+                            <label class="d-flex align-center gap-sm">
+                                <input type="checkbox" name="task-language" value="ja">
+                                <span>Japanese</span>
+                            </label>
+                            <label class="d-flex align-center gap-sm">
+                                <input type="checkbox" name="task-language" value="ar">
+                                <span>Arabic</span>
+                            </label>
+                        </div>
+                        <small class="text-muted">최소 1개 이상 선택하세요.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="task-filters">필터 (포함, 쉼표로 구분)</label>
+                        <textarea id="task-filters" class="form-control" rows="2"
+                            placeholder="예: 5G, revenue, telecom"></textarea>
+                        <small class="text-muted">없으면 모든 기사를 수집합니다. 설정하면 이 키워드가 포함된 기사만 수집합니다.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="task-excludes">필터 (제외, 쉼표로 구분)</label>
+                        <textarea id="task-excludes" class="form-control" rows="2"
+                            placeholder="예: cook, walz, allen, burton"></textarea>
+                        <small class="text-muted">이 키워드가 포함된 기사는 제외됩니다. (예: Tim Cook 관련 기사 제외)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="d-flex align-center gap-sm">
+                            <input type="checkbox" id="task-active" checked>
+                            <span>활성화 (자동 수집 포함)</span>
+                        </label>
+                    </div>
+
+                    <div class="d-flex gap-md" style="margin-top: 1.5rem;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            저장
+                        </button>
+                        <button type="button" class="btn btn-outline" onclick="closeModal()">
+                            취소
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/global-news.js"></script>
+</body>
+
+</html>

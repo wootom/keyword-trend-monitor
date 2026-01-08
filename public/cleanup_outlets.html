@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IXIO 데이터 정리</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        #result {
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        .danger {
+            background: #ff4444;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>IXIO 비주요 언론사 기사 정리</h1>
+    <button onclick="analyzeOnly()">분석만 하기</button>
+    <button class="danger" onclick="cleanupData()">정리 실행 (비주요 기사 삭제)</button>
+    <div id="result">버튼을 클릭하세요.</div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHXj3UNBJlWO1yGIVx2CQYrmglFfGN9qs",
+            authDomain: "keyword-trend-monitor.firebaseapp.com",
+            projectId: "keyword-trend-monitor",
+            storageBucket: "keyword-trend-monitor.firebasestorage.app",
+            messagingSenderId: "908689153541",
+            appId: "1:908689153541:web:43eed16f2c8a43d06ffd52"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const MAJOR_OUTLETS = [
+            '조선일보', '중앙일보', '동아일보', '한겨레', '경향신문',
+            '한국일보', '서울신문', '세계일보', '국민일보', '문화일보',
+            '매일경제', '한국경제', '서울경제', '파이낸셜뉴스', '머니투데이',
+            '이데일리', '아시아경제', '헤럴드경제', '뉴스1', '뉴시스',
+            'KBS', 'MBC', 'SBS', 'JTBC', 'MBN', 'YTN', '연합뉴스TV', 'TV조선',
+            '채널A', 'CBS', '연합뉴스',
+            '전자신문', '디지털타임스', '디지털데일리', '지디넷코리아', '블로터',
+            '아이뉴스24', 'IT동아', '테크월드', '바이라인네트워크', 'AI타임스',
+            '오마이뉴스', '프레시안', '미디어오늘', '더팩트', '스포츠조선',
+            '스포츠동아', '일간스포츠', '데일리안', 'SBS Biz', '비즈워치',
+            '이투데이', '조선비즈', '한경비즈니스', '뉴스웨이', '노컷뉴스'
+        ];
+
+        // 도메인 매핑 (업데이트된 버전)
+        const domainMap = {
+            'chosun.com': '조선일보', 'joongang.co.kr': '중앙일보',
+            'donga.com': '동아일보', 'hani.co.kr': '한겨레',
+            'khan.co.kr': '경향신문', 'hankookilbo.com': '한국일보',
+            'segye.com': '세계일보', 'munhwa.com': '문화일보',
+            'kmib.co.kr': '국민일보', 'seoul.co.kr': '서울신문',
+            'mk.co.kr': '매일경제', 'hankyung.com': '한국경제',
+            'sedaily.com': '서울경제', 'fnnews.com': '파이낸셜뉴스',
+            'mt.co.kr': '머니투데이', 'edaily.co.kr': '이데일리',
+            'asiae.co.kr': '아시아경제', 'heraldcorp.com': '헤럴드경제',
+            'news1.kr': '뉴스1', 'newsis.com': '뉴시스',
+            'yna.co.kr': '연합뉴스', 'kbs.co.kr': 'KBS',
+            'imbc.com': 'MBC', 'sbs.co.kr': 'SBS',
+            'jtbc.co.kr': 'JTBC', 'mbn.co.kr': 'MBN',
+            'ytn.co.kr': 'YTN', 'yonhapnewstv.co.kr': '연합뉴스TV',
+            'tvchosun.com': 'TV조선', 'ichannela.com': '채널A',
+            'etnews.com': '전자신문', 'dt.co.kr': '디지털타임스',
+            'ddaily.co.kr': '디지털데일리', 'zdnet.co.kr': '지디넷코리아',
+            'bloter.net': '블로터', 'inews24.com': '아이뉴스24',
+            'it.donga.com': 'IT동아', 'aitimes.com': 'AI타임스',
+            'byline.network': '바이라인네트워크',
+            'nocutnews.co.kr': '노컷뉴스', 'etoday.co.kr': '이투데이',
+            'bizwatch.co.kr': '비즈워치', 'newsway.co.kr': '뉴스웨이',
+            'tf.co.kr': '더팩트', 'news.tf.co.kr': '더팩트',
+            'ohmynews.com': '오마이뉴스', 'pressian.com': '프레시안',
+            'mediatoday.co.kr': '미디어오늘', 'dailian.co.kr': '데일리안',
+            'biz.chosun.com': '조선비즈', 'sbiz.heraldcorp.com': '헤럴드경제',
+            'sportschosun.com': '스포츠조선', 'sports.donga.com': '스포츠동아',
+            'isplus.com': '일간스포츠'
+        };
+
+        function extractOutletFromUrl(url) {
+            if (!url) return '';
+            try {
+                const domain = new URL(url).hostname.replace('www.', '');
+                for (const [d, name] of Object.entries(domainMap)) {
+                    if (domain.includes(d)) return name;
+                }
+                return domain;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function isMajorOutlet(source) {
+            if (!source) return false;
+            const sourceLower = source.toLowerCase();
+            return MAJOR_OUTLETS.some(outlet =>
+                sourceLower.includes(outlet.toLowerCase()) ||
+                outlet.toLowerCase().includes(sourceLower)
+            );
+        }
+
+        async function analyzeOnly() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '분석 중...';
+
+            const snapshot = await db.collection('ixioData').get();
+            let total = 0, major = 0, nonMajor = 0;
+            const nonMajorList = [];
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const articles = data.articles || [];
+                articles.forEach(article => {
+                    total++;
+                    const link = article.link || article.url || '';
+                    let outlet = article.outlet || extractOutletFromUrl(link);
+
+                    if (isMajorOutlet(outlet)) {
+                        major++;
+                    } else {
+                        nonMajor++;
+                        nonMajorList.push({ date: data.dateKey, outlet, title: article.title?.substring(0, 40) });
+                    }
+                });
+            });
+
+            resultDiv.textContent = `총 ${total}건 / 주요: ${major}건 / 비주요: ${nonMajor}건\n\n비주요 목록:\n` +
+                nonMajorList.map((a, i) => `${i + 1}. [${a.date}] ${a.outlet}: ${a.title}...`).join('\n');
+        }
+
+        async function cleanupData() {
+            if (!confirm('비주요 언론사 기사를 삭제하시겠습니까?')) return;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = '정리 중...';
+
+            const snapshot = await db.collection('ixioData').get();
+            const batch = db.batch();
+            let cleaned = 0, removed = 0;
+
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const articles = data.articles || [];
+
+                const filteredArticles = articles.filter(article => {
+                    const link = article.link || article.url || '';
+                    let outlet = article.outlet || extractOutletFromUrl(link);
+                    return isMajorOutlet(outlet);
+                });
+
+                removed += articles.length - filteredArticles.length;
+
+                if (filteredArticles.length !== articles.length) {
+                    batch.update(doc.ref, {
+                        articles: filteredArticles,
+                        count: filteredArticles.length
+                    });
+                    cleaned++;
+                }
+            });
+
+            await batch.commit();
+            resultDiv.textContent = `정리 완료!\n\n수정된 문서: ${cleaned}개\n삭제된 비주요 기사: ${removed}건`;
+        }
+    </script>
+</body>
+
+</html>

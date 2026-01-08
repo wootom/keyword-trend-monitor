@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 대시보드 - 글로벌 뉴스 모니터링</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+</head>
+
+<body>
+    <!-- 비밀번호 입력 화면 -->
+    <div id="auth-screen"
+        style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: var(--gray-100);">
+        <div class="card" style="max-width: 400px; width: 100%; margin: 1rem;">
+            <div class="card-header">
+                <h2 class="card-title">접근 보호</h2>
+            </div>
+            <div class="card-body">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary);">글로벌 뉴스 모니터링 시스템에 접근하려면 비밀번호를 입력하세요.</p>
+                <form id="auth-form">
+                    <div class="form-group">
+                        <label for="password">비밀번호</label>
+                        <input type="password" id="password" class="form-control" placeholder="비밀번호 입력" required>
+                    </div>
+                    <div id="auth-error" class="alert alert-error" style="display: none; margin-top: 1rem;">
+                        비밀번호가 올바르지 않습니다.
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        접속
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 컨텐츠 (인증 후 표시) -->
+    <div id="main-content" style="display: none;">
+        <!-- 헤더 -->
+        <header class="header">
+            <div class="container">
+                <div class="d-flex justify-between align-center">
+                    <h1 class="header-title" id="page-title">Task 대시보드</h1>
+                    <nav class="nav">
+                        <a href="global-news.html" class="nav-link">← Task 목록</a>
+                        <a href="ixio.html" class="nav-link">IXIO</a>
+                    </nav>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 컨텐츠 -->
+        <main class="container py-lg">
+
+            <!-- Task 정보 -->
+            <section class="card mb-lg">
+                <div class="card-header d-flex justify-between align-center">
+                    <h2 class="card-title">Task 정보</h2>
+                    <div class="d-flex gap-sm">
+                        <button class="btn btn-primary btn-sm" onclick="collectNow()">
+                            수집 실행
+                        </button>
+                        <button class="btn btn-outline btn-sm" onclick="backfill30Days()">
+                            30일 백필
+                        </button>
+                        <button class="btn btn-accent btn-sm" onclick="translateGemini()"
+                            style="background-color: #6C5CE7; color: white; border: none;">
+                            Gemini 번역
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table" style="margin: 0;">
+                            <tbody id="task-info-body">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted">로딩 중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 요약 통계 -->
+            <section class="mb-lg">
+                <div class="card" style="padding: 0;">
+                    <table class="table" style="margin: 0;">
+                        <thead>
+                            <tr style="background: var(--gray-100);">
+                                <th style="text-align: center; padding: 0.75rem;">총 언급량</th>
+                                <th style="text-align: center; padding: 0.75rem;">오늘 언급량</th>
+                                <th style="text-align: center; padding: 0.75rem;">일평균 언급량</th>
+                                <th style="text-align: center; padding: 0.75rem;">최고 언급량</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center; padding: 1rem;">
+                                    <div style="font-size: 2em; font-weight: bold; color: var(--primary-color);"
+                                        id="total-mentions">-</div>
+                                    <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0.25rem;"
+                                        id="date-range">-</div>
+                                </td>
+                                <td style="text-align: center; padding: 1rem;">
+                                    <div style="font-size: 2em; font-weight: bold; color: var(--primary-color);"
+                                        id="today-mentions">-</div>
+                                    <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0.25rem;"
+                                        id="today-date">-</div>
+                                </td>
+                                <td style="text-align: center; padding: 1rem;">
+                                    <div style="font-size: 2em; font-weight: bold; color: var(--primary-color);"
+                                        id="avg-mentions">-</div>
+                                    <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0.25rem;">
+                                        전체 기간</div>
+                                </td>
+                                <td style="text-align: center; padding: 1rem;">
+                                    <div style="font-size: 2em; font-weight: bold; color: var(--primary-color);"
+                                        id="peak-mentions">-</div>
+                                    <div style="font-size: 0.85em; color: var(--text-secondary); margin-top: 0.25rem;"
+                                        id="peak-date">-</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 트렌드 차트 -->
+            <section class="card mb-lg">
+                <div class="card-header">
+                    <h2 class="card-title">일별 키워드 추이</h2>
+                </div>
+                <div class="card-body">
+                    <div id="chart-scroll-container" style="overflow-x: auto; overflow-y: hidden;">
+                        <div id="chart-wrapper"
+                            style="height: 450px; position: relative; padding-top: 30px; min-width: 100%;">
+                            <canvas id="trend-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 데이터 테이블 -->
+            <section class="card">
+                <div class="card-header d-flex justify-between align-center">
+                    <h2 class="card-title">일별 상세 데이터</h2>
+                    <button class="btn btn-primary" id="refresh-btn" onclick="loadTaskData()">
+                        <span id="refresh-icon">새로고침</span>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>날짜 (KST)</th>
+                                    <th>샘플</th>
+                                    <th>뉴스합계</th>
+                                    <th>전일 대비</th>
+                                    <th>관련 기사 링크</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-table-body">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">데이터 로딩 중...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 푸터 -->
+        <footer
+            style="background: var(--gray-100); padding: var(--spacing-lg); margin-top: var(--spacing-2xl); border-top: 1px solid var(--gray-400); text-align: center; color: var(--text-secondary); font-size: var(--font-size-sm);">
+            © 2025 <strong>fovea</strong>. All rights reserved.
+        </footer>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/global-news-task.js"></script>
+</body>
+
+</html>
